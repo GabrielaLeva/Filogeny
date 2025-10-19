@@ -3,6 +3,8 @@
 # This code is a simple demonstration and is sunject to optimization, readablility and error handling improvements.
 # Might become a method in a future class, idk.
 
+import networkx as nx
+import matplotlib.pyplot as plt
 #taxa=[[0, 4, 2, 3], [4, 0 ,6, 7], [2,6,0,5], [3,7,5,0]]
 taxa=[[0, 5, 6, 3], [5, 0 ,2, 4], [6,2,0,7], [3,4,7,0]]
 taxa_labels=["A", "B", "C", "D"]
@@ -34,8 +36,8 @@ def UPMGA(taxa,taxa_labels):
         new_dist = [(taxa[closest_pair[0]][i]+taxa[closest_pair[1]][i])/2 for i in range(len(taxa)) if i not in closest_pair]
         new_dist.insert(0,0)
         new_t=[new_dist]
+        k=1
         for i,taxon in enumerate(taxa):
-            k=1
             if i not in closest_pair:
                 dist=[new_dist[k]]
                 k+=1
@@ -63,6 +65,7 @@ def OTU_M_calculator(taxa, S):
 # Neighbor-Joining algorithm placeholder
 def NJ(taxa,taxa_labels):
     tree={}
+    og_labels=taxa_labels.copy()
     while len(taxa_labels)>2:
         S=OTU_S_calculator(taxa)
         M=OTU_M_calculator(taxa,S)
@@ -74,26 +77,38 @@ def NJ(taxa,taxa_labels):
                     min_m=j
                     to_join=[idxi,idxi+idxj+1]
         new_labels=get_new_labels(taxa_labels,to_join)
-        distij=taxa[to_join[0]][to_join[1]]/2
-        tree[new_labels[0]]={taxa_labels[to_join[0]]:distij+(S[to_join[0]]-S[to_join[1]])/2,taxa_labels[to_join[1]]:distij+(S[to_join[1]]-S[to_join[0]])/2}
+        distij=taxa[to_join[0]][to_join[1]]
+        tree[new_labels[0]]={taxa_labels[to_join[0]]:(distij-S[to_join[0]]+S[to_join[1]])/2,taxa_labels[to_join[1]]:(distij-S[to_join[1]]+S[to_join[0]])/2}
         new_dist = [(taxa[to_join[0]][i]+taxa[to_join[1]][i]-distij)/2 for i in range(len(taxa)) if i not in to_join]
+        new_dist.insert(0,0)
+        new_t=[new_dist]
+        k=1
         for i,taxon in enumerate(taxa):
-            new_dist.insert(0,0)
-            new_t=[new_dist]
-            for i,taxon in enumerate(taxa):
-                k=1
-                if i not in to_join:
-                    dist=[new_dist[k]]
-                    k+=1
-                    dist.extend([taxon[j] for j in range(len(taxon)) if j not in to_join])
-                    new_t.append(dist)
-            taxa=new_t
-            taxa_labels=new_labels # Placeholder
+            if i not in to_join:
+                dist=[new_dist[k]]
+                k+=1
+                dist.extend([taxon[j] for j in range(len(taxon)) if j not in to_join])
+                new_t.append(dist)
+        taxa=new_t
+        taxa_labels=new_labels # Placeholder
     ## Pair remaining two
     last_labels=taxa_labels[0]+taxa_labels[1]
     tree[last_labels]={taxa_labels[0]:taxa[0][1],taxa_labels[1]:taxa[0][1]}
-    print(tree)
+    return tree
 
 
+
+def tree_to_nx(tree):
+    G=nx.DiGraph()
+    for parent in tree:
+        for child in tree[parent]:
+            if child!="to_end":
+                G.add_edge(parent,child,weight=tree[parent][child])
+    return G
 #UPMGA(taxa,taxa_labels)
-NJ(taxa,taxa_labels)
+tree=NJ(taxa,taxa_labels)
+print(tree)
+nx_tree=tree_to_nx(tree)
+nx.draw(nx_tree, with_labels=True, arrows=False)
+plt.show()
+print(nx_tree.edges(data=True))
