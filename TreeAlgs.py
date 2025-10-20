@@ -6,8 +6,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 #taxa=[[0, 4, 2, 3], [4, 0 ,6, 7], [2,6,0,5], [3,7,5,0]]
-taxa=[[0, 5, 6, 3], [5, 0 ,2, 4], [6,2,0,7], [3,4,7,0]]
-taxa_labels=["A", "B", "C", "D"]
+
 
 def get_distance(tree, dist, label):
     if label not in tree:
@@ -45,7 +44,7 @@ def UPMGA(taxa,taxa_labels):
                 new_t.append(dist)
         taxa=new_t
         taxa_labels=new_labels
-    print(tree)
+    return tree
 def OTU_S_calculator(taxa):
     n=len(taxa)
     return [sum(t)/(n-2) for t in taxa]
@@ -106,9 +105,9 @@ def tree_to_nx(tree):
                 G.add_edge(parent,child,weight=tree[parent][child])
     return G
 #UPMGA(taxa,taxa_labels)
-tree=NJ(taxa,taxa_labels)
-print(tree)
-nx_tree=tree_to_nx(tree)
-nx.draw(nx_tree, with_labels=True, arrows=False)
-plt.show()
-print(nx_tree.edges(data=True))
+#tree=NJ(taxa,taxa_labels)
+#print(tree)
+#nx_tree=tree_to_nx(tree)
+#nx.draw(nx_tree, with_labels=True, arrows=False)
+#plt.show()
+#print(nx_tree.edges(data=True))
