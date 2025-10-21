@@ -30,7 +30,8 @@ class MainWindow(QMainWindow):
         
     def on_button_clicked(self):
         ## Placeholder for actual data
-        taxa=[[0, 5, 6, 3], [5, 0 ,2, 4], [6,2,0,7], [3,4,7,0]]
+        #taxa=[[0, 5, 6, 3], [5, 0 ,2, 4], [6,2,0,7], [3,4,7,0]]
+        taxa = [[0, 4, 2, 3], [4, 0 ,6, 7], [2,6,0,5], [3,7,5,0]]
         taxa_labels=["A", "B", "C", "D"]
         if self.alg_list.currentItem().text() == "UPMGA":
             tree = UPMGA(taxa,taxa_labels)
