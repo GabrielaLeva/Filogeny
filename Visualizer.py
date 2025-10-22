@@ -31,7 +31,7 @@ scene = QGraphicsScene(0,0,width,height)
 scene.setBackgroundBrush(QBrush(Qt.white))
 
 ## Function for traversing the tree
-def drawTree(x1,y1, distance, node:Node, starting_leaf, leaves):
+def drawTree(x1,y1, distance, node:Node, starting_leaf):
     x2=x1+distance
     scene.addLine(x1,y1,x2,y1)
     if(node.height>0):
@@ -43,7 +43,7 @@ def drawTree(x1,y1, distance, node:Node, starting_leaf, leaves):
             centering=label0.boundingRect().right()/2
             label0.setPos(x2+d*mult/2-centering,y2)
             label0.setDefaultTextColor(Qt.black)
-            drawTree(x2,y2,d*mult,child,starting_leaf,leafcount2)
+            drawTree(x2,y2,d*mult,child,starting_leaf)
             starting_leaf+=leafcount2
     else:
         label0=scene.addText(node.name)
@@ -52,7 +52,7 @@ def drawTree(x1,y1, distance, node:Node, starting_leaf, leaves):
         label0.setDefaultTextColor(Qt.black)
 
 
-drawTree(0,height/2,paddingx,root,0,leafcount)
+drawTree(0,height/2,paddingx,root,0)
 
 view=QGraphicsView(scene)
 view.setRenderHint(QPainter.Antialiasing)
