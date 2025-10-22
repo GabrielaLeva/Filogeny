@@ -35,10 +35,10 @@ class MainWindow(QMainWindow):
         taxa_labels=["A", "B", "C", "D"]
         if self.alg_list.currentItem().text() == "UPMGA":
             tree = UPMGA(taxa,taxa_labels)
-            print(tree)
+            print(tree.to_dict())
         elif self.alg_list.currentItem().text() == "Neighbour Joining":
             tree = NJ(taxa,taxa_labels)
-            print(tree)
+            print(tree.to_dict())
 window = MainWindow()
 window.show()
 app.exec()

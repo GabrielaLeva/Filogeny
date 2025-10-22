@@ -8,24 +8,17 @@ from PySide6.QtGui import QBrush, QPen, QPainter
 #NOTE: This will eventually become an independent window for the visualisation of trees
 # Temp input for the visualizer, 
 from TreeAlgs import UPMGA
-
+from TreeObject import Node
 app = QApplication([])
-
-tree={'AC': {'A': 1.0, 'C': 1.0, 'to_end': 1.0}, 'ACD': {'AC': 1.0, 'D': 2.0, 'to_end': 2.0}, 'ACDB': {'ACD': 1.0, 'B': 3.0, 'to_end': 3.0}}
-leafcount=4
-
-#this is inneficient
-#TODO: find a way to store the result or moddify the algorithms to have the 
-def get_leaf_count(tree,node):
-    if node in tree.keys():
-        return sum([get_leaf_count(tree,x) for x in tree[node] if x!="to_end"])
-    else:
-        return 1
+taxa = [[0, 4, 2, 3], [4, 0 ,6, 7], [2,6,0,5], [3,7,5,0]]
+taxa_labels=["A", "B", "C", "D"]
+tree=UPMGA(taxa,taxa_labels)
 
 mult=100
-root = sorted(list(tree.keys()),key=len)[-1]
+root=tree.root
+leafcount=root.leaves
 height=(leafcount-1)*mult
-width=tree[root]["to_end"]*mult
+width=(root.height)*mult
 #Potentially parameters
 paddingx=0.1*width
 paddingy=0.1*height
@@ -38,33 +31,22 @@ scene = QGraphicsScene(0,0,width,height)
 scene.setBackgroundBrush(QBrush(Qt.white))
 
 ## Function for traversing the tree
-def drawTree(x1,y1, distance, node, starting_leaf, leaves):
+def drawTree(x1,y1, distance, node:Node, starting_leaf, leaves):
     x2=x1+distance
     scene.addLine(x1,y1,x2,y1)
-    if(node in tree.keys()):
-        children=list(tree[node].keys())
-        children.remove("to_end")
-        leafcount0=get_leaf_count(tree,children[0])
-        #Issue identified: nearly duplicate code 
-        y20=(starting_leaf+(leafcount0-1)/2)*mult+paddingy
-        scene.addLine(x2,y1,x2,y20)
-        d=tree[node][children[0]]
-        label0=scene.addText(str(d))
-        centering=label0.boundingRect().right()/2
-        label0.setPos(x2+d*mult/2-centering,y20)
-        label0.setDefaultTextColor(Qt.black)
-        drawTree(x2,y20,d*mult,children[0],starting_leaf,leafcount0)
-
-        y21=(leafcount0+(leaves-leafcount0-1)/2)*mult+paddingy
-        d=tree[node][children[1]]
-        label0=scene.addText(str(d))
-        centering=label0.boundingRect().right()/2
-        label0.setPos(x2+d*mult/2-centering,y21)
-        label0.setDefaultTextColor(Qt.black)
-        scene.addLine(x2,y1,x2,y21)
-        drawTree(x2,y21,tree[node][children[1]]*mult,children[1],starting_leaf+leafcount0,leaves-leafcount0)
+    if(node.height>0):
+        for child,d in node.children:
+            leafcount2=child.leaves 
+            y2=(starting_leaf+(leafcount2-1)/2)*mult+paddingy
+            scene.addLine(x2,y1,x2,y2)
+            label0=scene.addText(str(d))
+            centering=label0.boundingRect().right()/2
+            label0.setPos(x2+d*mult/2-centering,y2)
+            label0.setDefaultTextColor(Qt.black)
+            drawTree(x2,y2,d*mult,child,starting_leaf,leafcount2)
+            starting_leaf+=leafcount2
     else:
-        label0=scene.addText(node)
+        label0=scene.addText(node.name)
         r=label0.boundingRect().bottomRight()
         label0.setPos(x2-r.x(),y1-r.y())
         label0.setDefaultTextColor(Qt.black)
