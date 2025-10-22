@@ -3,11 +3,6 @@
 # This code is a simple demonstration and is sunject to optimization, readablility and error handling improvements.
 # Might become a method in a future class, idk.
 
-import networkx as nx
-import matplotlib.pyplot as plt
-#taxa=[[0, 4, 2, 3], [4, 0 ,6, 7], [2,6,0,5], [3,7,5,0]]
-
-
 def get_distance(tree, dist, label):
     if label not in tree:
         return dist
@@ -94,20 +89,3 @@ def NJ(taxa,taxa_labels):
     last_labels=taxa_labels[0]+taxa_labels[1]
     tree[last_labels]={taxa_labels[0]:taxa[0][1],taxa_labels[1]:taxa[0][1]}
     return tree
-
-
-
-def tree_to_nx(tree):
-    G=nx.DiGraph()
-    for parent in tree:
-        for child in tree[parent]:
-            if child!="to_end":
-                G.add_edge(parent,child,weight=tree[parent][child])
-    return G
-#UPMGA(taxa,taxa_labels)
-#tree=NJ(taxa,taxa_labels)
-#print(tree)
-#nx_tree=tree_to_nx(tree)
-#nx.draw(nx_tree, with_labels=True, arrows=False)
-#plt.show()
-#print(nx_tree.edges(data=True))

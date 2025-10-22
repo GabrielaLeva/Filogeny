@@ -45,25 +45,28 @@ def drawTree(x1,y1, distance, node, starting_leaf, leaves):
         children=list(tree[node].keys())
         children.remove("to_end")
         leafcount0=get_leaf_count(tree,children[0])
-
+        #Issue identified: nearly duplicate code 
         y20=(starting_leaf+(leafcount0-1)/2)*mult+paddingy
         scene.addLine(x2,y1,x2,y20)
         d=tree[node][children[0]]
         label0=scene.addText(str(d))
-        label0.setPos(x2+d*mult/2,y20)
+        centering=label0.boundingRect().right()/2
+        label0.setPos(x2+d*mult/2-centering,y20)
         label0.setDefaultTextColor(Qt.black)
         drawTree(x2,y20,d*mult,children[0],starting_leaf,leafcount0)
 
         y21=(leafcount0+(leaves-leafcount0-1)/2)*mult+paddingy
         d=tree[node][children[1]]
         label0=scene.addText(str(d))
-        label0.setPos(x2+d*mult/2,y21)
+        centering=label0.boundingRect().right()/2
+        label0.setPos(x2+d*mult/2-centering,y21)
         label0.setDefaultTextColor(Qt.black)
         scene.addLine(x2,y1,x2,y21)
         drawTree(x2,y21,tree[node][children[1]]*mult,children[1],starting_leaf+leafcount0,leaves-leafcount0)
     else:
         label0=scene.addText(node)
-        label0.setPos(x2,y1)
+        r=label0.boundingRect().bottomRight()
+        label0.setPos(x2-r.x(),y1-r.y())
         label0.setDefaultTextColor(Qt.black)
 
 
