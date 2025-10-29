@@ -3,15 +3,7 @@
 # This code is a simple demonstration and is sunject to optimization, readablility and error handling improvements.
 # Might become a method in a future class, idk.
 from TreeObject import PhyloTree
-def get_distance(tree, dist, label):
-    if label not in tree:
-        return dist
-    else:
-        return dist-tree[label]["to_end"]
 def UPMGA(taxa,taxa_labels):
-    # Tree structure to hold the final tree
-    # Might become a proper object in the future
-    # {"Cluster": {"A" : distance, "B":distance, "to_end":distance},}
     tree = PhyloTree(taxa_labels)
     while len(taxa) > 1:
         min_dist = taxa[0][1]
