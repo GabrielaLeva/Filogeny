@@ -1,3 +1,5 @@
+from random import choice
+import time
 settings={"match": 1,"missmatch":-1,"indel":-2,"out":"output.txt"}
 def read_result(i,j,matrix,seq1,seq2,local=False):
     a = ["",""]
@@ -43,28 +45,41 @@ class Fogssa_node:
         self.parent=parent
         #Functionality: checking if children are there will check if node is expanded
         self.children=[]
-        diff=abs(s1-p1-(s2-p2))
-        minlen=min(s1-p1,s2-p2)
-        Fmax=minlen*settings["match"]+diff*settings["indel"]
-        Fmin=minlen*settings["missmatch"]+diff*settings["indel"]
-        self.Tmax=Fmax+score
-        self.Tmin=Fmin+score
+        if (s1-p1) <= (s2-p2):
+            Fmax=(s1-p1)*settings["match"]+((s2-p2)-(s1-p1))*settings["indel"]
+            Fmin=(s1-p1)*settings["missmatch"]+((s2-p2)-(s1-p1))*settings["indel"]
+        else:
+            Fmax=(s2-p2)*settings["match"]+((s1-p1)-(s2-p2))*settings["indel"]
+            Fmin=(s2-p2)*settings["missmatch"]+((s1-p1)-(s2-p2))*settings["indel"]
+        self.upper_bound=Fmax+score
+        self.lower_bound=Fmin+score
     def expand(self,seq1,seq2):
-        match_score=settings["match"] if seq1[self.p1]==seq2[self.p2] else settings["missmatch"]
         children=[]
-        #sanity chcecks i guess
-        if(self.p1+1<=self.s1):
-            children.append(Fogssa_node(self.p1+1,self.p2,self.s1,self.s2,self.score+settings["indel"],self))
-        if(self.p2+1<=self.s2):
-            children.append(Fogssa_node(self.p1,self.p2+1,self.s1,self.s2,self.score+settings["indel"],self))
-        if(self.p1+1<=self.s1 and self.p1+1<=self.s1):
-            children.append(Fogssa_node(self.p1+1,self.p2+1,self.s1,self.s2,self.score+match_score,self))
-        children.sort(key= lambda x: x.Tmax+x.Tmin,reverse=True)
+        children.append(Fogssa_node(self.p1+1,self.p2,self.s1,self.s2,self.score+settings["indel"],self))
+        children.append(Fogssa_node(self.p1,self.p2+1,self.s1,self.s2,self.score+settings["indel"],self))
+        match_score=settings["match"] if seq1[self.p1]==seq2[self.p2] else settings["missmatch"]
+        children.append(Fogssa_node(self.p1+1,self.p2+1,self.s1,self.s2,self.score+match_score,self))
+        children.sort(key= lambda x: (x.upper_bound,x.lower_bound))
         self.children=children
         return children
+#Insert at priority 
+def Insert_node_at_sorted(node:Fogssa_node,list:list,begin,end):
+    child=node.children[-1]
+    while begin<end:
+        halfway=(end+begin)//2
+        h_node = list[halfway].children[-1]
+        if h_node.upper_bound>child.upper_bound or (h_node.upper_bound==child.upper_bound and h_node.lower_bound>child.lower_bound):
+            end=halfway
+        elif h_node.upper_bound<child.upper_bound or (h_node.upper_bound==child.upper_bound and h_node.lower_bound<child.lower_bound):
+            begin=halfway+1
+        elif h_node.upper_bound==child.upper_bound and h_node.lower_bound==child.lower_bound:
+            begin=halfway+1
+            break
+    list.insert(begin,node)
 #Fogsaa
 def FOGSSA(seq1,seq2):
-    priority_queue=[]
+    #priority_queue=[]
+    priority_queue_new=[]
     #fitness referance: dict used to check if a node at (p1, p2) is promising
     fitness_referance={}
     p1,p2=0,0
@@ -72,34 +87,58 @@ def FOGSSA(seq1,seq2):
     root=Fogssa_node(0,0,s1,s2,0,None)
     alignment_path=None
     small=min(s1,s2)
-    #sanity_check=small//0.3*settings["match"]+(small-(small//0.3))*settings["missmatch"]+ abs(s1-s2)*settings["indel"]
-    opt=root.Tmin
+    th=small*30//100
+    sanity_check=th*settings["match"]+(small-th)*settings["missmatch"]+abs(s1-s2)*settings["indel"]
+    opt=root.lower_bound
     currnode=root
     while True:
-        while p1 <= s1-1 or p2 <= s2-1:
-            ch=currnode.expand(seq1,seq2)
-            currnode=ch[0]
+        while p1 <= s1-1 and p2 <= s2-1:
+            if not currnode.children:
+                currnode.expand(seq1,seq2)
+            ch=currnode.children.pop()
+            if currnode.children:
+                #priority_queue.append(currnode)
+                Insert_node_at_sorted(currnode,priority_queue_new,0,len(priority_queue_new))
+            currnode=ch
             p1=currnode.p1
             p2=currnode.p2
-            print(currnode.score,currnode.p1, currnode.p2,currnode.Tmax, currnode.Tmin)
-            if(len(ch)>1):
-                priority_queue.extend(ch)
+            #print(currnode.score,currnode.p1, currnode.p2,currnode.upper_bound, currnode.lower_bound)
             fit=fitness_referance.get((p1,p2))
-            if (fit is not None and currnode.score<=fit) or currnode.Tmax<=opt:
-                priority_queue.sort(key=lambda x:x.Tmax+x.Tmin)
-                currnode=priority_queue.pop()
+            if (fit is not None and currnode.score<=fit) or currnode.upper_bound<=opt:
+                #priority_queue.sort(key=lambda x:(x.children[-1].upper_bound,x.children[-1].lower_bound))
+                #currnode=priority_queue.pop()
+                try:
+                    currnode=priority_queue_new.pop()
+                    #currnode=priority_queue.pop()
+                except(IndexError):
+                    break
                 p1=currnode.p1
                 p2=currnode.p2
+                #print("Pruned, moving to node at ", p1,",",p2)
             else:
                 fitness_referance[(p1,p2)]=currnode.score
-        if currnode.Tmax>=opt:
-            opt=currnode.Tmax
+        if currnode.upper_bound>=opt:
+            opt=currnode.upper_bound
             alignment_path=currnode
-        priority_queue.sort(key=lambda x:x.Tmax+x.Tmin)
-        currnode=priority_queue.pop()
+        #priority_queue.sort(key=lambda x:(x.children[-1].upper_bound,x.children[-1].lower_bound))
+        #currnode=priority_queue.pop()
+        if priority_queue_new:
+            currnode=priority_queue_new.pop()
+        else:
+            return opt
         p1=currnode.p1
         p2=currnode.p2
-        if opt>=currnode.Tmax:# or currnode.Tmax<sanity_check:
+        #print("Moving to node at ", p1,",",p2)
+        if opt>=currnode.upper_bound or currnode.upper_bound<sanity_check:
             return opt
 print(Needleman_wunsch("ACGGTTGC","AGCGTC")[-1][-1])
 print(FOGSSA("ACGGTTGC","AGCGTC"))
+
+## Randomized tests
+test_seq=[''.join([choice(["A","C","T","G"]) for _ in range(100)]) for _ in range(10)]
+ex_time=time.time()
+[print(Needleman_wunsch(test_seq[2*i],test_seq[2*i+1])[-1][-1]) for i in range(5)]
+print(time.time()-ex_time)
+ex_time=time.time()
+[print(FOGSSA(test_seq[2*i],test_seq[2*i+1])) for i in range(5)]
+print(time.time()-ex_time)
