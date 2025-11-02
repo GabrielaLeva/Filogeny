@@ -89,7 +89,7 @@ def FOGSSA(seq1,seq2):
     small=min(s1,s2)
     th=small*30//100
     sanity_check=th*settings["match"]+(small-th)*settings["missmatch"]+abs(s1-s2)*settings["indel"]
-    opt=root.lower_bound
+    lb=root.lower_bound
     currnode=root
     while True:
         while p1 <= s1-1 and p2 <= s2-1:
@@ -104,33 +104,25 @@ def FOGSSA(seq1,seq2):
             p2=currnode.p2
             #print(currnode.score,currnode.p1, currnode.p2,currnode.upper_bound, currnode.lower_bound)
             fit=fitness_referance.get((p1,p2))
-            if (fit is not None and currnode.score<=fit) or currnode.upper_bound<=opt:
-                #priority_queue.sort(key=lambda x:(x.children[-1].upper_bound,x.children[-1].lower_bound))
-                #currnode=priority_queue.pop()
-                try:
-                    currnode=priority_queue_new.pop()
-                    #currnode=priority_queue.pop()
-                except(IndexError):
-                    break
-                p1=currnode.p1
-                p2=currnode.p2
-                #print("Pruned, moving to node at ", p1,",",p2)
+            if (fit is not None and currnode.score<=fit) or currnode.upper_bound<=lb:
+                break
             else:
                 fitness_referance[(p1,p2)]=currnode.score
-        if currnode.upper_bound>=opt:
-            opt=currnode.upper_bound
-            alignment_path=currnode
+        else:
+            if currnode.upper_bound>lb:
+                lb=currnode.upper_bound
+                alignment_path=currnode
         #priority_queue.sort(key=lambda x:(x.children[-1].upper_bound,x.children[-1].lower_bound))
         #currnode=priority_queue.pop()
         if priority_queue_new:
             currnode=priority_queue_new.pop()
         else:
-            return opt
+            return lb
         p1=currnode.p1
         p2=currnode.p2
         #print("Moving to node at ", p1,",",p2)
-        if opt>=currnode.upper_bound or currnode.upper_bound<sanity_check:
-            return opt
+        if lb>=currnode.upper_bound or currnode.upper_bound<sanity_check:
+            return lb
 print(Needleman_wunsch("ACGGTTGC","AGCGTC")[-1][-1])
 print(FOGSSA("ACGGTTGC","AGCGTC"))
 
