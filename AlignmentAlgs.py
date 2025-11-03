@@ -43,6 +43,7 @@ class Fogssa_node:
         self.s2=s2
         self.score=score
         self.parent=parent
+        self.fitness=None
         #Functionality: checking if children are there will check if node is expanded
         self.children=[]
         if (s1-p1) <= (s2-p2):
@@ -61,10 +62,11 @@ class Fogssa_node:
         children.append(Fogssa_node(self.p1+1,self.p2+1,self.s1,self.s2,self.score+match_score,self))
         children.sort(key= lambda x: (x.upper_bound,x.lower_bound))
         self.children=children
-        return children
+    def 
 #Insert at priority 
 def Insert_node_at_sorted(node:Fogssa_node,list:list,begin,end):
     child=node.children[-1]
+    node.fitness=child.upper_bound
     while begin<end:
         halfway=(end+begin)//2
         h_node = list[halfway].children[-1]
@@ -78,59 +80,66 @@ def Insert_node_at_sorted(node:Fogssa_node,list:list,begin,end):
     list.insert(begin,node)
 #Fogsaa
 def FOGSSA(seq1,seq2):
-    #priority_queue=[]
-    priority_queue_new=[]
-    #fitness referance: dict used to check if a node at (p1, p2) is promising
-    fitness_referance={}
-    p1,p2=0,0
-    s1,s2=len(seq1),len(seq2)
-    root=Fogssa_node(0,0,s1,s2,0,None)
-    alignment_path=None
-    small=min(s1,s2)
-    th=small*30//100
-    sanity_check=th*settings["match"]+(small-th)*settings["missmatch"]+abs(s1-s2)*settings["indel"]
-    lb=root.lower_bound
-    currnode=root
-    while True:
-        while p1 <= s1-1 and p2 <= s2-1:
-            if not currnode.children:
-                currnode.expand(seq1,seq2)
-            ch=currnode.children.pop()
-            if currnode.children:
-                #priority_queue.append(currnode)
-                Insert_node_at_sorted(currnode,priority_queue_new,0,len(priority_queue_new))
-            currnode=ch
-            p1=currnode.p1
-            p2=currnode.p2
-            #print(currnode.score,currnode.p1, currnode.p2,currnode.upper_bound, currnode.lower_bound)
-            fit=fitness_referance.get((p1,p2))
-            if (fit is not None and currnode.score<=fit) or currnode.upper_bound<=lb:
-                break
+    #with open("out.txt","w") as output:
+        #priority_queue=[]
+        priority_queue_new=[]
+        #fitness referance: dict used to check if a node at (p1, p2) is promising
+        fitness_referance={}
+        p1,p2=0,0
+        s1,s2=len(seq1),len(seq2)
+        root=Fogssa_node(0,0,s1,s2,0,None)
+        alignment_path=None
+        small=min(s1,s2)
+        th=small*30//100
+        sanity_check=th*settings["match"]+(small-th)*settings["missmatch"]+abs(s1-s2)*settings["indel"]
+        lb=root.lower_bound
+        currnode=root
+        #output.write(f"Last node: ({currnode.p1}, {currnode.p2}) [{currnode.upper_bound}, {currnode.lower_bound}] {currnode.score}\n")
+        while True:
+            while p1 <= s1-1 and p2 <= s2-1:
+                if not currnode.children:
+                    currnode.expand(seq1,seq2)
+                ch=currnode.children.pop()
+                if currnode.children and currnode.children[-1].upper_bound>lb:
+                    #priority_queue.append(currnode)
+                    Insert_node_at_sorted(currnode,priority_queue_new,0,len(priority_queue_new))
+                currnode=ch
+                p1=currnode.p1
+                p2=currnode.p2
+                fit=fitness_referance.get((p1,p2),lb)
+                if currnode.score<=fit or currnode.upper_bound<=lb:
+                    break
+                else:
+                    fitness_referance[(p1,p2)]=currnode.score
             else:
-                fitness_referance[(p1,p2)]=currnode.score
-        else:
-            if currnode.upper_bound>lb:
-                lb=currnode.upper_bound
-                alignment_path=currnode
-        #priority_queue.sort(key=lambda x:(x.children[-1].upper_bound,x.children[-1].lower_bound))
-        #currnode=priority_queue.pop()
-        if priority_queue_new:
-            currnode=priority_queue_new.pop()
-        else:
-            return lb
-        p1=currnode.p1
-        p2=currnode.p2
-        #print("Moving to node at ", p1,",",p2)
-        if lb>=currnode.upper_bound or currnode.upper_bound<sanity_check:
-            return lb
-print(Needleman_wunsch("ACGGTTGC","AGCGTC")[-1][-1])
-print(FOGSSA("ACGGTTGC","AGCGTC"))
+                if currnode.upper_bound>lb:
+                    lb=currnode.upper_bound
+                    alignment_path=currnode
+                    for i in range(len(priority_queue_new)):
+                        if priority_queue_new[i].fitness>lb:
+                            break
+                    priority_queue_new=priority_queue_new[max(i-1,0):]
+            #priority_queue.sort(key=lambda x:(x.children[-1].upper_bound,x.children[-1].lower_bound))
+            #currnode=priority_queue.pop()
+            if priority_queue_new:
+                #output.write(f"Last node: ({currnode.p1}, {currnode.p2}) [{currnode.upper_bound}, {currnode.lower_bound}] {currnode.score}\n")
+                currnode=priority_queue_new.pop()
+                p1=currnode.p1
+                p2=currnode.p2
+                #output.write(f"Moving to node at {p1},{p2}\n")
+            else:
+                return lb
+            if lb>=currnode.upper_bound or currnode.upper_bound<sanity_check:
+                return lb
+#print(Needleman_wunsch("ACGGTTGC","AGCGTC")[-1][-1])
+#print(FOGSSA("ACGGTTGC","AGCGTC"))
 
 ## Randomized tests
-test_seq=[''.join([choice(["A","C","T","G"]) for _ in range(100)]) for _ in range(10)]
+test_seq=[''.join([choice(["A","C","T","G"]) for _ in range(1000)]) for _ in range(50)]
+print(test_seq)
 ex_time=time.time()
-[print(Needleman_wunsch(test_seq[2*i],test_seq[2*i+1])[-1][-1]) for i in range(5)]
-print(time.time()-ex_time)
+[print(Needleman_wunsch(test_seq[2*i],test_seq[2*i+1])[-1][-1]) for i in range(25)]
+print((time.time()-ex_time)/25)
 ex_time=time.time()
-[print(FOGSSA(test_seq[2*i],test_seq[2*i+1])) for i in range(5)]
-print(time.time()-ex_time)
+[print(FOGSSA(test_seq[2*i],test_seq[2*i+1])) for i in range(25)]
+print((time.time()-ex_time)/25)
