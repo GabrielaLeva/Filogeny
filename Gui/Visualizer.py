@@ -1,11 +1,10 @@
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import ( QApplication, QMainWindow, 
-    QPushButton, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QVBoxLayout, QWidget)
 #Qt Graphics Framework
 from PySide6.QtWidgets import (QGraphicsScene, QGraphicsView, 
     QGraphicsRectItem, QGraphicsEllipseItem)
 from PySide6.QtGui import QBrush, QPen, QPainter
-from TreeObject import PhyloTree,Node
+from Lib.TreeObject import PhyloTree,Node
 #NOTE: This will eventually become an independent window for the visualisation of trees
 # Temp input for the visualizer, 
 class Visualizer(QWidget):

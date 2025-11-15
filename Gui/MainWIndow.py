@@ -1,11 +1,23 @@
 import os
 
-import pygame.mixer_music
+#import pygame.mixer_music
+from PySide6.QtWidgets import (QApplication,QSlider,QLabel,QFileDialog,QTextEdit,QComboBox,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QPushButton,QLabel,QStackedWidget)
+from PySide6.QtGui import QMovie,QPixmap
 
-from main import *
+from PySide6.QtCore import Qt,QUrl,QTimer
 
+from Lib.TreeAlgs import NJ,UPMGA
+from Bio.Seq import Seq
+from Bio.Align import PairwiseAligner
+from random import choice
+from Lib.SettingsObjects import AlgorithmSettings
+from Gui.Visualizer import Visualizer
+from Bio import SeqIO
+
+from PySide6.QtMultimedia import QSoundEffect
 from PySide6.QtWidgets import (QGroupBox,QRadioButton,QButtonGroup,QTextEdit,QComboBox)
 
+assets_path="Assets/"
 class MainWindow(QMainWindow):
 
 #Whats the worst that can happen? <- Clueless
@@ -53,11 +65,11 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(self.btn_Vis)
         sidebar_layout.addWidget(self.btn_settings)
 
-        if os.path.exists("DNA_orbit_animated.gif"):
+        if os.path.exists(assets_path+"Img/DNA_orbit_animated.gif"):
 
             sidebar_layout.addSpacing(20)
             dna_label=QLabel()
-            self.dna_move = QMovie("DNA_orbit_animated.gif")
+            self.dna_move = QMovie(assets_path+"Img/DNA_orbit_animated.gif")
             dna_label.setMovie(self.dna_move)
             dna_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             dna_label.setScaledContents(True)
@@ -72,6 +84,7 @@ class MainWindow(QMainWindow):
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
             placeholder.setStyleSheet("color:white; font-size:48px;")
             sidebar_layout.addWidget(placeholder)
+            print(assets_path+"Img")
 
 
         sidebar_layout.addStretch()
@@ -385,40 +398,37 @@ class MainWindow(QMainWindow):
         if self.rat_destroyed:
             return
 
-        if not pygame.mixer.get_init():
-            pygame.mixer.init()
+        #if not pygame.mixer.get_init():
+            #pygame.mixer.init()
 
         if not self.backgroundMusic:
             try:
-                if os.path.exists("backgroundMusic.mp3"):
-                    pygame.mixer.music.load("backgroundMusic.mp3")
-                    pygame.mixer.music.set_volume(0.3)
-                    pygame.mixer.music.play(-1)
+                if os.path.exists(assets_path+"Sound/backgroundMusic.mp3"):
+                    #pygame.mixer.music.load("backgroundMusic.mp3")
+                    #pygame.mixer.music.set_volume(0.3)
+                    #pygame.mixer.music.play(-1)
                     self.backgroundMusic=True
             except Exception as e:
                 print(f"Background Music Error: {e}")
 
 
             try:
-                if os.path.exists("click.wav"):
+                if os.path.exists(assets_path+"Sound/click.wav"):
                     if not self.click_sound:
-                        self.click_sound=pygame.mixer.Sound("click.wav")
-
+                        self.click_sound=QSoundEffect()
+                        self.click_sound.setSource(assets_path+"Sound/click.wav")
+                        self.click_sound.setVolume(0.3 + (self.click_count * 0.02))
                         pitch = 1.0 + (self.click_count * 0.1)
                         pitch = min(pitch, 3.0)
 
-                        sound_array = pygame.sndarray.array(self.click_sound)
-                        adjusted_sound = pygame.mixer.Sound(sound_array)
-
-                        adjusted_sound.set_volume(0.3 + (self.click_count * 0.02))
-                        adjusted_sound.play()
+                        self.click_sound.play()
 
                         self.click_count+=1
             except Exception as e:
                 print(f"Click Sound Problem: {e}")
 
-        if not self.rat_visible and os.path.exists("Rat.gif"):
-            self.dna_move=QMovie("Rat.gif")
+        if not self.rat_visible and os.path.exists(assets_path+"Img/Rat.gif"):
+            self.dna_move=QMovie(assets_path+"Img/Rat.gif")
             self.DestructionRatLabel.setMovie(self.dna_move)
             self.dna_move.start()
             self.rat_visible=True
@@ -440,16 +450,17 @@ class MainWindow(QMainWindow):
 
         self.dna_move.stop()
 
-        if os.path.exists("SkeletonRat.png"):
-            skeleton_map=QPixmap("SkeletonRat.png")
+        if os.path.exists(assets_path+"Img/SkeletonRat.png"):
+            skeleton_map=QPixmap(assets_path+"Img/SkeletonRat.png")
             self.DestructionRatLabel.setPixmap(skeleton_map.scaled(self.DestructionRatLabel.width(),self.DestructionRatLabel.height(),Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
             self.DestructionRatLabel.setScaledContents(False)
 
         try:
-            if os.path.exists("bad_to_the_bone.mp3"):
-                pygame.mixer.music.load("bad_to_the_bone.mp3")
-                pygame.mixer.music.set_volume(0.7)
-                pygame.mixer.music.play()
+            if os.path.exists(assets_path+"Img/bad_to_the_bone.mp3"):
+                #pygame.mixer.music.load(assets_path+"Img/bad_to_the_bone.mp3")
+                #pygame.mixer.music.set_volume(0.7)
+                #pygame.mixer.music.play()
+                print("A")
         except ImportError as e:
             print(f"Error: {e}")
             print("DAMN IT GOD DAMN IT!")
@@ -457,19 +468,20 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(2500,self.Explosion)
 
     def Explosion(self):
-        if os.path.exists("Explosion.gif"):
-            explosion = QMovie("Explosion.gif")
+        if os.path.exists(assets_path+"Img/Explosion.gif"):
+            explosion = QMovie(assets_path+"Img/Explosion.gif")
             self.DestructionRatLabel.setMovie(explosion)
             explosion.start()
             explosion.frameChanged.connect(lambda:self.CheckExplosionEnd(explosion))
             self.dna_move = explosion
 
         try:
-            if os.path.exists("Explosion.mp3"):
-                pygame.mixer.music.stop()
-                pygame.mixer.music.load("Explosion.mp3")
-                pygame.mixer.music.set_volume(0.8)
-                pygame.mixer.music.play()
+            if os.path.exists(assets_path+"Img/Explosion.mp3"):
+                #pygame.mixer.music.stop()
+                #pygame.mixer.music.load(assets_path+"Img/Explosion.mp3")
+                #pygame.mixer.music.set_volume(0.8)
+                #pygame.mixer.music.play()
+                print("A")
 
         except Exception as e:
             print(f"Explosion Sound Error: {e}")

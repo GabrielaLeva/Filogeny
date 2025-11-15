@@ -2,7 +2,7 @@
 # Implementation of the UPGMA (Unweighted Pair Group Method with Arithmetic Mean) algorithm for CREATING PHYLOGNETIC TREES
 # This code is a simple demonstration and is sunject to optimization, readablility and error handling improvements.
 # Might become a method in a future class, idk.
-from TreeObject import PhyloTree
+from Lib.TreeObject import PhyloTree
 def get_distance(tree, dist, label):
     if label not in tree:
         return dist
